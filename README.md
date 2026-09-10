@@ -46,6 +46,10 @@
 
 <img src="./images/main.PNG" width="600">
 
+### 설정 화면
+
+<img src="./images/setting.PNG" width ="600">
+
 ### 학습 화면
 
 <img src="./images/learning.PNG" width="600">
