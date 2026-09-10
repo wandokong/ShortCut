@@ -1,4 +1,4 @@
-<!DOCTYPE html><!--키보드 누를 때 ' 거랑 \ 이거 안눌림 -->
+<!DOCTYPE html><!--키보드 누를 때 ' 거랑 \ 이거 안눌림 메뉴 css 건들였더니 안나가진다 설정 화면 캡쳐 했으니까 깃에 설명서 올려라-->
 <html>
 <head>
     <meta charset="UTF-8">
@@ -577,11 +577,11 @@
                 let answerKeys = [...question.keys].sort();
 
                 if(JSON.stringify(inputKeys) === JSON.stringify(answerKeys)){
-                    document.getElementById("backMenu").style.display = "none";
+                    document.getElementById("menuButton").style.display = "none";
                     document.getElementById("learnResult").innerText = "이 단축키는 " + question.q + "입니다."
                     setTimeout(() => {
                         document.getElementById("learnResult").innerText = "";
-                        document.getElementById("backMenu").style.display = "inline-block";
+                        document.getElementById("menuButton").style.display = "inline-block";
                     }, 800);
 
                     break;
@@ -942,6 +942,7 @@
             score = 0; // 점수 초기화
             wrongQuestions = [];
             currentMode = "menu";
+            document.getElementById("keyboard").style.display = "none";
             showScreen("menu"); // 메뉴 화면 표시
         });
 
