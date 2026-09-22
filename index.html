@@ -1,5 +1,5 @@
-<!DOCTYPE html><!--키보드 누를 때 ' 거랑 \ 이거 안눌림 메뉴 css 건들였더니 안나가진다 설정 화면 캡쳐 했으니까 깃에 설명서 올려라-->
-<html>
+<!DOCTYPE html><!--키보드 누를 때 ' 거랑 \ 이거 안눌림 로그인 기능 추가했다 css랑 hmtl 좀 손봐서 화면좀 만들고 메인화면에 로그아웃 버튼 꺼내고 메인화면에 로그인 화면 버튼 추가해라 비유하면 맛은 냈으니 보기좋게 만들어라-->
+<html><!--값 저장하는거 해봐-->
 <head>
     <meta charset="UTF-8">
     <title>퀴즈</title>
@@ -268,6 +268,19 @@
             <button id="settingButton" onclick="loadSettings(), showScreen('settingScreen')">⚙ 설정</button>
         </div>
         
+        <div id="loginScreen">
+            <h1>로그인</h1>
+
+            <input type="email" id="emailInput" placeholder="이메일">
+            <input type="password" id="passwordInput" placeholder="비밀번호">
+
+            <button id="singupButton">회원가입</button>
+            <button id="loginButton">로그인</button>
+            <button id="logoutButton">로그아웃</button>
+
+            <p id="loginMessage"></p>
+        </div>
+
         <div id="settingScreen"><!-- 설정 화면 -->
             <h1>설정</h1>
             <div class="settingBox">
@@ -330,6 +343,96 @@
 
     <div id="keyboard"></div>
     
+    <script type="module">//주소들은 firbase 공식 문서에서 웹용 firbase SDK를 가져오는 주소임
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";//함수 initializeApp()를 가져옴
+
+        import {
+            getFirestore,//firbase 사용
+            doc,//문서 사용
+            setDoc,//문서 저장하기
+            getDoc//문서 가져오기
+        } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+        import {
+            getAuth,//인증 사용
+            createUserWithEmailAndPassword,//회원가입
+            signInWithEmailAndPassword,//로그인
+            onAuthStateChanged,//로그인 상태 변경 감지
+            signOut
+        } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+
+        const firebaseConfig = {//firbase 연결 주소들
+            apiKey: "AIzaSyCaNkJTy2gRkXq2-i4-VxmhaKHo5JjdZ9I",
+            authDomain: "shortcut-lab.firebaseapp.com",
+            projectId: "shortcut-lab",
+            storageBucket: "shortcut-lab.firebasestorage.app",
+            messagingSenderId: "319781407015",
+            appId: "1:319781407015:web:8c53661bbe07555bf7c102",
+            measurementId: "G-YSWEE04HJ0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log("로그인 상태");
+                console.log("이메일 : ", user.email);
+                console.log("uid : ", user.uid);
+            } else {
+                console.log("로그아웃 상태");
+            }
+        })
+
+        document.getElementById("singupButton").addEventListener("click", async () => {
+            const email = document.getElementById("emailInput").value;
+            const password = document.getElementById("passwordInput").value;
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);//auth을 사용하여 회원가입
+                
+                console.log("회원가입 성공 : ", userCredential.user.uid);//사용자 구분을 위한 uid 생성
+                document.getElementById("loginMessage").innerText = "회원가입 성공!";
+            } catch (error) {
+                console.error(error);
+                document.getElementById("loginMessage").innerText = "회원가입 실패!" + error.message;
+            }
+        });
+
+        document.getElementById("loginButton").addEventListener("click", async () => {
+            const email = document.getElementById("emailInput").value;
+            const password = document.getElementById("passwordInput").value;
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);//auth을 사용하여 로그인
+
+                console.log("로그인 성공 : ", userCredential.user.uid);
+                document.getElementById("loginMessage").innerText = "로그인 성공!";
+            }catch (error) {
+                console.error(error);
+                document.getElementById("loginMessage").innerText = "로그인 실패!" + error.message;
+            }
+        })
+
+        document.getElementById("logoutButton").addEventListener("click", async () => {
+            try {
+                await signOut(auth);//auth을 사용하여 로그아웃
+                alert("로그아웃 성공");
+            } catch (error) {
+                console.error(error);
+                document.getElementById("loginMessage").innerText = "로그아웃 실패!" + error.message;
+            }   
+        })
+
+        const user = auth.currentUser;
+        if (user) {
+            await setDoc(doc(db, "users", user.uid), {//users라는 컬랙션에 현재 로그인한 사용자의 uid를 문서 이름으로 사용하고 그 안에 bestScore 저장
+                bestScore: 850
+            });
+            console.log("점수 저장 완료");
+        }
+    </script>
 
     <script>
 
@@ -426,6 +529,8 @@
         };
 
         let combo = 0;
+
+        showScreen("loginScreen");// 메뉴 화면 표시
 
         document.getElementById("keyboard").style.display = "none";// 키보드 숨기기
 
