@@ -1,5 +1,5 @@
 <!DOCTYPE html><!--키보드 누를 때 ' 거랑 \ 이거 안눌림 로그인 기능 추가했다 css랑 hmtl 좀 손봐서 화면좀 만들고 메인화면에 로그아웃 버튼 꺼내고 메인화면에 로그인 화면 버튼 추가해라 비유하면 맛은 냈으니 보기좋게 만들어라-->
-<html><!--값 저장하는거 해봐-->
+<html><!--295-->
 <head>
     <meta charset="UTF-8">
     <title>퀴즈</title>
@@ -246,9 +246,20 @@
     text-shadow:
         0 4px 0 #D3DAD9,
         0 8px 18px rgba(0,0,0,.4);
-}
+    }
+
+    #loginScreen{
+        display : none;
+    }
+    #loginScreenButton{
+        position: absolute;
+        top: 20px;
+        right: 20px;
+    }
+
     </style>
 </head>
+<button id="loginScreenButton" onclick="showScreen('loginScreen')">로그인</button>
 <body>
     <div class="game"><!-- 게임 전체 컨테이너 -->
         <div id ="menu"><!-- 메뉴 화면 -->
@@ -267,19 +278,35 @@
             <button id="startButton">문제 시작</button>
             <button id="settingButton" onclick="loadSettings(), showScreen('settingScreen')">⚙ 설정</button>
         </div>
-        
-        <div id="loginScreen">
-            <h1>로그인</h1>
 
-            <input type="email" id="emailInput" placeholder="이메일">
-            <input type="password" id="passwordInput" placeholder="비밀번호">
+        </div id="authScreen">
+            <div id="loginScreen">
+                <h1>로그인</h1>
 
-            <button id="singupButton">회원가입</button>
-            <button id="loginButton">로그인</button>
-            <button id="logoutButton">로그아웃</button>
+                <input type="email" id="emailInput" placeholder="이메일">
+                <input type="password" id="passwordInput" placeholder="비밀번호">
 
-            <p id="loginMessage"></p>
+                <button id="singupButton">회원가입</button>
+                <button id="loginButton">로그인</button>
+                <button id="logoutButton">로그아웃</button>
+
+                <p id="loginMessage"></p>
+            </div>
+//여기 아직 다 안만듬 회원가입 창 넘어가는 버튼 만들고 firebase랑 연결 되는지 확인하고 로그인 했을때 로그아웃 할수 있도록 만들어
+            <div id="loginScreen">
+                <h1>로그인</h1>
+
+                <input type="email" id="emailInput" placeholder="이메일">
+                <input type="password" id="passwordInput" placeholder="비밀번호">
+
+                <button id="singupButton">회원가입</button>
+                <button id="loginButton">로그인</button>
+                <button id="logoutButton">로그아웃</button>
+
+                <p id="loginMessage"></p>
+            </div>
         </div>
+        
 
         <div id="settingScreen"><!-- 설정 화면 -->
             <h1>설정</h1>
@@ -316,7 +343,7 @@
             <h1>학습하기</h1>
             <div id="studyList"></div>
             <p id="learnResult"></p>
-            <button id="menuButton">메뉴로</button>
+            <button class="menuButton">메뉴로</button>
         </div>
 
         <div id="gameScreen"><!-- 게임 화면 -->
@@ -336,7 +363,7 @@
             <h3 id="grade"></h3>
             <div id="review"></div>
             <button id="restart">다시 시작</button>
-            <button id="menuButton">메뉴로</button>
+            <button class="menuButton">메뉴로</button>
             <button id="WrongQuestionsRestart">틀린문제만</button>
         </div>
     </div>
@@ -424,14 +451,16 @@
                 document.getElementById("loginMessage").innerText = "로그아웃 실패!" + error.message;
             }   
         })
-
+        
         const user = auth.currentUser;
         if (user) {
             await setDoc(doc(db, "users", user.uid), {//users라는 컬랙션에 현재 로그인한 사용자의 uid를 문서 이름으로 사용하고 그 안에 bestScore 저장
-                bestScore: 850
+            bestScore: 850
             });
             console.log("점수 저장 완료");
         }
+        
+        
     </script>
 
     <script>
@@ -529,8 +558,6 @@
         };
 
         let combo = 0;
-
-        showScreen("loginScreen");// 메뉴 화면 표시
 
         document.getElementById("keyboard").style.display = "none";// 키보드 숨기기
 
@@ -916,7 +943,14 @@
             document.getElementById("endScreen").style.display = "none";
             document.getElementById("studyScreen").style.display = "none";
             document.getElementById("settingScreen").style.display = "none";
+            document.getElementById("loginScreen").style.display = "none";
             document.getElementById(screenId).style.display = "block";
+
+            if (screenId === "gameScreen" || screenId === "studyScreen" || screenId === "loginScreen") {
+                document.getElementById("loginScreenButton").style.display = "none";
+            } else {
+                document.getElementById("loginScreenButton").style.display = "block";
+            }
         }
 
         function formatKeys(keys) {
@@ -1014,8 +1048,7 @@
             }
 
             currentMode = "learning";
-            document.getElementById("menu").style.display = "none";
-            document.getElementById("studyScreen").style.display = "block";
+            showScreen("studyScreen"); // 학습 화면 표시
             document.getElementById("keyboard").style.display = "flex";
 
             let studyHTML = "";
@@ -1040,15 +1073,19 @@
             startQuestion(); // 문제 시작
         });
 
-        document.getElementById("menuButton").addEventListener("click", function() { // 메뉴로 버튼 클릭 시
-            questions = originalQuestions.filter(
-                q => q.category === currentCategory // 초기 카테고리에 맞는 문제로 시작
-            );
-            score = 0; // 점수 초기화
-            wrongQuestions = [];
-            currentMode = "menu";
-            document.getElementById("keyboard").style.display = "none";
-            showScreen("menu"); // 메뉴 화면 표시
+        document.querySelectorAll(".menuButton").forEach(button => {
+            button.addEventListener("click", function() { // 메뉴로 버튼 클릭 시
+                console.log("메뉴 버튼 클릭");
+                questions = originalQuestions.filter(
+                    q => q.category === currentCategory // 초기 카테고리에 맞는 문제로 시작
+                );
+                score = 0; // 점수 초기화
+                wrongQuestions = [];
+                currentMode = "menu";
+                document.getElementById("keyboard").style.display = "none";
+                showScreen("menu"); // 메뉴 화면 표시
+                console.log("메뉴로 돌아감");
+            });
         });
 
         document.getElementById("WrongQuestionsRestart").addEventListener("click", function() { // 틀린 문제만 다시 시작 버튼 클릭 시
