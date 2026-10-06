@@ -1,5 +1,5 @@
 <!DOCTYPE html><!--키보드 누를 때 ' 거랑 \ 이거 안눌림 로그인 기능 추가했다 css랑 hmtl 좀 손봐서 화면좀 만들고 메인화면에 로그아웃 버튼 꺼내고 메인화면에 로그인 화면 버튼 추가해라 비유하면 맛은 냈으니 보기좋게 만들어라-->
-<html><!--로그인 다 했다 값 저장하는거 만들자-->
+<html><!-- css 좀 만졌거든 로그인 하고 정보 부분 다듬고 회원가입하는 부분도 만져-->
 <head>
     <meta charset="UTF-8">
     <title>퀴즈</title>
@@ -180,6 +180,7 @@
         gap:6px;
         margin-top:10px;
         margin-bottom:0;
+        display:none;
     }
     .keyboardRow{
         display:flex;
@@ -248,9 +249,6 @@
         0 8px 18px rgba(0,0,0,.4);
     }
 
-    #loginScreen{
-        display : none;
-    }
     #loginScreenButton{
         position: absolute;
         top: 20px;
@@ -266,11 +264,72 @@
         display : none;
     }
 
-    #userMenu{
+    #infoScreen{
+        display : none;
+    }
+
+    #loginScreen, #infoScreen {
+        /*width : 360px;
+        padding : 30px;
+        box-sizing : border-box;
+
+        display : flex;
+        flex-direction : column;
+        align-items : stretch;
+        gap : 12px;
+
+        background : white;
+        border-radius : 15px;
+        box-shadow : 0 5px 20px rgba(0, 0, 0, 0.15);*/
+        
+        display : none;
+    }
+
+    #loginScreen h1, #infoScreen h2 {
+        text-align : center;
+        margin : 0 0 15px 0;
+    }
+
+    #loginScreen input {
+        width : 100%;
+        box-sizing: border-box;
+        padding : 12px;
+        background : #37353E;
+        
+        border : 1px solid #37353E;
+        border-radius : 8px;
+
+        font-size : 14px;
+    }
+
+    #loginScreen button, #infoScreen button {
+        width : 50%;
+        padding : 11px;
+
+        border : none;
+        border-radius : 8px;
+
+        cursor : pointer;
+    }
+
+    #infoScreen p {
+        margin : 2px 0;
+        color : #d3dad9;
+    }
+
+    #infoScreen #infoEmail, #infoScreen #infoBestScore {
+        padding : 10px;
+        margin : 0 0 8px 0;
+
+        background : #37353E;
+        border-radius : 8px;
+    }
+
+    #userMenu {
         display : none;
         position: absolute;
-        top: 100px;
-        right: 20px;
+        top : 100px;
+        right : 20px;
     }
 
     </style>
@@ -313,6 +372,18 @@
 
             <p id="loginMessage"></p>
         </div>
+
+        <div id ="infoScreen">
+            <h2>내 정보</h2>
+            <p>이메일</p>
+            <p id="infoEmail"></p>
+
+            <p>최고 점수</p>
+            <p id="infoBestScore"></p>
+
+            <button class="menuButton">메뉴로</button>
+        </div>
+
         <div id="signupScreen">
             <h1>회원가입</h1>
 
@@ -422,102 +493,13 @@
 
         let currentUser = null;
 
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            
-            if (user) {
-                console.log("로그인 상태");
-                console.log("이메일 : ", user.email);
-                console.log("uid : ", user.uid);
 
-                document.getElementById("loginScreenButton").innerText = user.email + " v"; 
-            } else {
-                console.log("로그아웃 상태");
-
-                document.getElementById("loginScreenButton").innerText = "로그인";
-            }
-        })
-
-        document.getElementById("loginScreenButton").addEventListener("click", () => {
-            if (currentUser) {
-                if (userMenu.style.display === "block") {
-                    document.getElementById("userMenu").style.display = "none";
-                } else {
-                    document.getElementById("userMenu").style.display = "block";
-                }
-            } else {
-                showScreen("loginScreen");
-            }
-        });
-
-        document.getElementById("signupButton").addEventListener("click", async () => {
-            const email = document.getElementById("signupEmail").value;
-            const password = document.getElementById("signupPassword").value;
-
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);//auth을 사용하여 회원가입
-                
-                console.log("회원가입 성공 : ", userCredential.user.uid);//사용자 구분을 위한 uid 생성
-                document.getElementById("signupMessage").innerText = "회원가입 성공!";
-            } catch (error) {
-                console.error(error);
-                document.getElementById("signupMessage").innerText = "회원가입 실패!" + error.message;
-            }
-        });
-
-        document.getElementById("loginButton").addEventListener("click", async () => {
-            const email = document.getElementById("loginEmail").value;
-            const password = document.getElementById("loginPassword").value;
-
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);//auth을 사용하여 로그인
-
-                console.log("로그인 성공 : ", userCredential.user.uid);
-                document.getElementById("loginMessage").innerText = "로그인 성공!";
-            }catch (error) {
-                console.error(error);
-                document.getElementById("loginMessage").innerText = "로그인 실패!" + error.message;
-            }
-        })
-
-        document.getElementById("logoutButton").addEventListener("click", async () => {
-            try {
-                await signOut(auth);//auth을 사용하여 로그아웃
-                alert("로그아웃 성공");
-                document.getElementById("userMenu").style.display = "none";
-            } catch (error) {
-                console.error(error);
-                document.getElementById("loginMessage").innerText = "로그아웃 실패!" + error.message;
-            }   
-        })
-        
-        function checkLogin(){
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-
-                } else {
-
-                }
-            });
-        }
-
-        const user = auth.currentUser;
-        if (user) {
-            await setDoc(doc(db, "users", user.uid), {//users라는 컬랙션에 현재 로그인한 사용자의 uid를 문서 이름으로 사용하고 그 안에 bestScore 저장
-            bestScore: 850
-            });
-            console.log("점수 저장 완료");
-        }
-        
-        
-    </script>
-
-    <script>
 
         let time = 10;
         let timerId;
 
         let score = 0;
+        let bestScore = 0;
         
         const originalQuestions = [//문제 은행 : windows, browser, edit, linux, vs code(보류) / 난이도 : easy(많이 알고 쉬움), normal(아는사람 별로 없), hard(아는사람 별로 없고 어려움)
             { q: "바탕 화면 표시/숨기기", keys:["meta","d"], category:"windows" ,difficulty:"easy"},
@@ -608,9 +590,118 @@
 
         let combo = 0;
 
-        document.getElementById("keyboard").style.display = "none";// 키보드 숨기기
 
-        function selectCategory(category, button) { // 카테고리 선택 함수
+        onAuthStateChanged(auth, async(user) => {
+            currentUser = user;
+            console.log(currentUser);
+            
+            if (user) {
+                console.log("로그인 상태");
+                console.log("이메일 : ", user.email);
+                console.log("uid : ", user.uid);
+
+                await loadBestScore();
+
+                document.getElementById("loginScreenButton").innerText = user.email + " v"; 
+            } else {
+                console.log("로그아웃 상태");
+
+                bestScore = 0;
+
+                document.getElementById("loginScreenButton").innerText = "로그인";
+            }
+        })
+
+        document.getElementById("loginScreenButton").addEventListener("click", () => {
+            if (currentUser) {
+                if (userMenu.style.display === "block") {
+                    document.getElementById("userMenu").style.display = "none";
+                } else {
+                    document.getElementById("userMenu").style.display = "block";
+                }
+            } else {
+                showScreen("loginScreen");
+            }
+        });
+
+        document.getElementById("signupButton").addEventListener("click", async () => {
+            const email = document.getElementById("signupEmail").value;
+            const password = document.getElementById("signupPassword").value;
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);//auth을 사용하여 회원가입
+                
+                console.log("회원가입 성공 : ", userCredential.user.uid);//사용자 구분을 위한 uid 생성
+                document.getElementById("signupMessage").innerText = "회원가입 성공!";
+            } catch (error) {
+                console.error(error);
+                document.getElementById("signupMessage").innerText = "회원가입 실패!" + error.message;
+            }
+        });
+
+        document.getElementById("loginButton").addEventListener("click", async () => {
+            const email = document.getElementById("loginEmail").value;
+            const password = document.getElementById("loginPassword").value;
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);//auth을 사용하여 로그인
+
+                console.log("로그인 성공 : ", userCredential.user.uid);
+                document.getElementById("loginMessage").innerText = "로그인 성공!";
+            }catch (error) {
+                console.error(error);
+                document.getElementById("loginMessage").innerText = "로그인 실패!" + error.message;
+            }
+        })
+
+        document.getElementById("logoutButton").addEventListener("click", async () => {
+            try {
+                await signOut(auth);//auth을 사용하여 로그아웃
+                alert("로그아웃 성공");
+                document.getElementById("userMenu").style.display = "none";
+            } catch (error) {
+                console.error(error);
+                document.getElementById("loginMessage").innerText = "로그아웃 실패!" + error.message;
+            }   
+        })
+        
+
+        async function loadBestScore() {
+            if (!currentUser) {
+                bestScore = 0;
+                return;
+            }
+        
+            try {
+                const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+         
+                if (userDoc.exists()) {
+                    bestScore = userDoc.data().bestScore || 0;
+                }else {
+                    bestScore = 0;
+                }
+                console.log("최고 점수 불러옴:", bestScore);
+            } catch (error) {
+                console.error("최고 점수 불러오기 실패:", error);
+            }
+        }
+
+        async function saveBestScore() {
+            console.log("최고 점수 저장 시도:", bestScore);
+            
+            if(!currentUser) return;
+
+            try {
+                await setDoc(doc(db, "users", currentUser.uid), { bestScore: bestScore },{ merge: true });
+                console.log("최고 점수 저장됨:", bestScore);
+            } catch (error) {
+                console.error("최고 점수 저장 실패:", error);
+            }
+        }
+
+
+
+        window.selectCategory = function(category, button) { // 카테고리 선택 함수
             currentCategory = category;// 선택한 카테고리 저장
             if(category === "windows"){
                 gameType = "choice";
@@ -629,14 +720,14 @@
             button.classList.add("selectedCategory"); // 선택한 버튼에 선택된 클래스 추가
         }
 
-        function loadSettings(){
+        window.loadSettings = function(){
             document.getElementById("timerCheck").checked = settings.timer;
             document.querySelector(`input[name="questionCount"][value="${settings.questionCount}"]`).checked = true;// 저장된 상태로 바꿈
             document.querySelector(`input[name="difficulty"][value="${settings.difficulty}"]`).checked = true;// 저장된 상태로 바꿈
 
         }
 
-        function saveSettings(){
+        window.saveSettings = function(){
             settings.timer = document.getElementById("timerCheck").checked;
             settings.questionCount = Number(document.querySelector('input[name="questionCount"]:checked').value);
             settings.difficulty = document.querySelector('input[name="difficulty"]:checked').value;
@@ -940,7 +1031,7 @@
             }, 800);
         }
 
-        function result() {
+        async function result() {
             start = false;
             clearInterval(timerId);
             showScreen("endScreen");// 게임 끝 화면 표시
@@ -984,9 +1075,15 @@
             }
 
             document.getElementById("review").innerHTML = reviewHTML;
+
+            if (score > bestScore) {
+                bestScore = score;
+                await saveBestScore();
+                console.log("새로운 최고점수:", bestScore);
+            }
         }
 
-        function showScreen(screenId) {
+        window.showScreen = function(screenId) {
             document.getElementById("menu").style.display = "none";
             document.getElementById("gameScreen").style.display = "none";
             document.getElementById("endScreen").style.display = "none";
@@ -994,10 +1091,12 @@
             document.getElementById("settingScreen").style.display = "none";
             document.getElementById("loginScreen").style.display = "none";
             document.getElementById("signupScreen").style.display = "none";
+            document.getElementById("infoScreen").style.display = "none";
             document.getElementById(screenId).style.display = "block";
 
             if (screenId === "gameScreen" || screenId === "studyScreen" || screenId === "loginScreen" || screenId === "signupScreen") {
                 document.getElementById("loginScreenButton").style.display = "none";
+                document.getElementById("userMenu").style.display = "none";
             } else {
                 document.getElementById("loginScreenButton").style.display = "block";
             }
@@ -1160,6 +1259,12 @@
                 document.getElementById("keyboard").style.display = "flex";
             }
             startQuestion(); // 문제 시작
+        });
+
+        document.getElementById("infoButton").addEventListener("click", function() { // 정보 버튼 클릭 시
+            document.getElementById("infoEmail").textContent = currentUser.email;
+            document.getElementById("infoBestScore").textContent = bestScore + "점";
+            showScreen("infoScreen"); // 정보 화면 표시
         });
     </script>
 </body>
