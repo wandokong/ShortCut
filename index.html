@@ -1,5 +1,5 @@
 <!DOCTYPE html><!--키보드 누를 때 ' 거랑 \ 이거 안눌림 로그인 기능 추가했다 css랑 hmtl 좀 손봐서 화면좀 만들고 메인화면에 로그아웃 버튼 꺼내고 메인화면에 로그인 화면 버튼 추가해라 비유하면 맛은 냈으니 보기좋게 만들어라-->
-<html><!-- css 좀 만졌거든 로그인 하고 정보 부분 다듬고 회원가입하는 부분도 만져-->
+<html><!--  랭킹 기능 만들었다 여러가지 계정 추가해서 만들고 랭킹 되는지 봐라-->
 <head>
     <meta charset="UTF-8">
     <title>퀴즈</title>
@@ -259,39 +259,15 @@
         font-size: 18px;
         margin-top: 10px;
     }
-
-    #signupScreen{
+    #loginScreen, #infoScreen, #signupScreen {
         display : none;
     }
-
-    #infoScreen{
-        display : none;
-    }
-
-    #loginScreen, #infoScreen {
-        /*width : 360px;
-        padding : 30px;
-        box-sizing : border-box;
-
-        display : flex;
-        flex-direction : column;
-        align-items : stretch;
-        gap : 12px;
-
-        background : white;
-        border-radius : 15px;
-        box-shadow : 0 5px 20px rgba(0, 0, 0, 0.15);*/
-        
-        display : none;
-    }
-
-    #loginScreen h1, #infoScreen h2 {
+    #loginScreen h1, #infoScreen h2, #signupScreen h2 {
         text-align : center;
         margin : 0 0 15px 0;
     }
-
-    #loginScreen input {
-        width : 100%;
+    #loginScreen input , #signupScreen input {
+        width : 70%;
         box-sizing: border-box;
         padding : 12px;
         background : #37353E;
@@ -300,10 +276,10 @@
         border-radius : 8px;
 
         font-size : 14px;
+        color : #d3dad9;
     }
-
-    #loginScreen button, #infoScreen button {
-        width : 50%;
+    #loginScreen button, #infoScreen button, #signupScreen button {
+        width : 40%;
         padding : 11px;
 
         border : none;
@@ -311,12 +287,10 @@
 
         cursor : pointer;
     }
-
     #infoScreen p {
         margin : 2px 0;
         color : #d3dad9;
     }
-
     #infoScreen #infoEmail, #infoScreen #infoBestScore {
         padding : 10px;
         margin : 0 0 8px 0;
@@ -332,6 +306,31 @@
         right : 20px;
     }
 
+    #rankingScreen {
+    display: none;
+    }
+    #rankingScreen h2 {
+        text-align: center;
+        margin: 0 0 15px 0;
+    }
+    #rankingList {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    #rankingList p {
+        margin: 0;
+        padding: 12px;
+        color: #d3dad9;
+    }
+    #closeRankingButton {
+        width: 100%;
+        padding: 11px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
     </style>
 </head>
 <button id="loginScreenButton">로그인</button>
@@ -339,6 +338,7 @@
     <button id="infoButton">내 정보</button>
     <button id="logoutButton">로그아웃</button>
 </div>
+<button id="rankingButton">랭킹</button>
 
 <body>
     <div class="game"><!-- 게임 전체 컨테이너 -->
@@ -387,6 +387,7 @@
         <div id="signupScreen">
             <h1>회원가입</h1>
 
+            <input type="text" id="signupNickname" placeholder="닉네임">
             <input type="email" id="signupEmail" placeholder="이메일">
             <input type="password" id="signupPassword" placeholder="비밀번호">
 
@@ -428,6 +429,20 @@
             </div>
         </div>
 
+        <div id="rankingScreen">
+            <h2>랭킹</h2>
+
+            <div id="rankingList">
+                <p>1. 완두콩 - 100점</p>
+                <p>2. 고구마 - 90점</p>
+                <p>3. 감자 - 80점</p>
+                <p>4. 옥수수 - 70점</p>
+                <p>5. 토마토 - 60점</p>
+            </div>
+
+            <button class="menuButton">메뉴로</button>
+        </div>
+
         <div id="studyScreen"><!-- 학습 화면-->
             <h1>학습하기</h1>
             <div id="studyList"></div>
@@ -466,7 +481,12 @@
             getFirestore,//firbase 사용
             doc,//문서 사용
             setDoc,//문서 저장하기
-            getDoc//문서 가져오기
+            getDoc,//문서 가져오기
+            collection,//컬렉션 사용
+            getDocs,//컬렉션 가져오기
+            query,//쿼리 사용
+            orderBy,//정렬 사용
+            limit,//제한 사용
         } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
         import {
@@ -590,6 +610,8 @@
 
         let combo = 0;
 
+        let nickname = "";
+
 
         onAuthStateChanged(auth, async(user) => {
             currentUser = user;
@@ -602,7 +624,7 @@
 
                 await loadBestScore();
 
-                document.getElementById("loginScreenButton").innerText = user.email + " v"; 
+                document.getElementById("loginScreenButton").innerText = nickname; 
             } else {
                 console.log("로그아웃 상태");
 
@@ -625,12 +647,14 @@
         });
 
         document.getElementById("signupButton").addEventListener("click", async () => {
+            const nickname = document.getElementById("signupNickname").value;
             const email = document.getElementById("signupEmail").value;
             const password = document.getElementById("signupPassword").value;
 
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);//auth을 사용하여 회원가입
                 
+                await setDoc(doc(db, "users", userCredential.user.uid), {nickname: nickname, bestScore: 0});//회원가입 시 닉네임과 최고점수 저장
                 console.log("회원가입 성공 : ", userCredential.user.uid);//사용자 구분을 위한 uid 생성
                 document.getElementById("signupMessage").innerText = "회원가입 성공!";
             } catch (error) {
@@ -677,10 +701,12 @@
          
                 if (userDoc.exists()) {
                     bestScore = userDoc.data().bestScore || 0;
+                    nickname = userDoc.data().nickname;
                 }else {
                     bestScore = 0;
                 }
                 console.log("최고 점수 불러옴:", bestScore);
+                console.log("닉네임 불러옴:", nickname);
             } catch (error) {
                 console.error("최고 점수 불러오기 실패:", error);
             }
@@ -699,6 +725,24 @@
             }
         }
 
+        async function loadRanking(){
+            try {
+                const rankingQuery = query(collection(db, "users"), orderBy("bestScore", "desc"), limit(10));
+                const rankingSnapshot = await getDocs(rankingQuery);
+                const rankingList = document.getElementById("rankingList");
+                rankingList.innerHTML= "";
+                let rank = 1;
+                rankingSnapshot.forEach(doc => {
+                    const userData = doc.data();
+                    const rankingItem = document.createElement("p");
+                    rankingItem.textContent = `${rank}. ${userData.nickname} - ${userData.bestScore}점`;
+                    rankingList.appendChild(rankingItem);
+                    rank++;
+                });
+            } catch (error) {
+                console.error("랭킹 불러오기 실패:", error);
+            }
+        }
 
 
         window.selectCategory = function(category, button) { // 카테고리 선택 함수
@@ -1091,7 +1135,8 @@
             document.getElementById("settingScreen").style.display = "none";
             document.getElementById("loginScreen").style.display = "none";
             document.getElementById("signupScreen").style.display = "none";
-            document.getElementById("infoScreen").style.display = "none";
+            document.getElementById("infoScreen").style.display = "none"
+            document.getElementById("rankingScreen").style.display = "none";
             document.getElementById(screenId).style.display = "block";
 
             if (screenId === "gameScreen" || screenId === "studyScreen" || screenId === "loginScreen" || screenId === "signupScreen") {
@@ -1265,6 +1310,11 @@
             document.getElementById("infoEmail").textContent = currentUser.email;
             document.getElementById("infoBestScore").textContent = bestScore + "점";
             showScreen("infoScreen"); // 정보 화면 표시
+        });
+
+        document.getElementById("rankingButton").addEventListener("click", async function() { // 랭킹 버튼 클릭 시
+            await loadRanking();
+            showScreen("rankingScreen"); // 랭킹 화면 표시
         });
     </script>
 </body>
