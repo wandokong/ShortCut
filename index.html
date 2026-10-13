@@ -278,7 +278,16 @@
         font-size : 14px;
         color : #d3dad9;
     }
-    #loginScreen button, #infoScreen button, #signupScreen button {
+    #loginScreen button{
+        width : 30%;
+        padding : 11px;
+
+        border : none;
+        border-radius : 8px;
+
+        cursor : pointer;
+    }
+    #infoScreen button, #signupScreen button {
         width : 40%;
         padding : 11px;
 
@@ -323,12 +332,11 @@
         padding: 12px;
         color: #d3dad9;
     }
-    #closeRankingButton {
-        width: 100%;
-        padding: 11px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
+    #rankingButton{
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        display: none;
     }
 
     </style>
@@ -368,20 +376,9 @@
 
             <button id="loginButton" onclick="console.log('눌렸어')">로그인</button>
             <button id="signupScreenButton" onclick="showScreen('signupScreen')">회원가입</button>
-            <button class="menuButton">메뉴로</button>
+            <button class="menuButton" onclick="clearLoginSignup()">메뉴로</button>
 
             <p id="loginMessage"></p>
-        </div>
-
-        <div id ="infoScreen">
-            <h2>내 정보</h2>
-            <p>이메일</p>
-            <p id="infoEmail"></p>
-
-            <p>최고 점수</p>
-            <p id="infoBestScore"></p>
-
-            <button class="menuButton">메뉴로</button>
         </div>
 
         <div id="signupScreen">
@@ -392,11 +389,21 @@
             <input type="password" id="signupPassword" placeholder="비밀번호">
 
             <button id="signupButton" onclick="console.log('아 그만 눌러')">회원가입</button>
-            <button class="menuButton">메뉴로</button>
+            <button class="menuButton" onclick="clearLoginSignup()">메뉴로</button>
 
             <p id="signupMessage"></p>
         </div>
         
+        <div id ="infoScreen">
+            <h2>내 정보</h2>
+            <p>이메일</p>
+            <p id="infoEmail"></p>
+
+            <p>최고 점수</p>
+            <p id="infoBestScore"></p>
+
+            <button class="menuButton">메뉴로</button>
+        </div>
 
         <div id="settingScreen"><!-- 설정 화면 -->
             <h1>설정</h1>
@@ -425,7 +432,7 @@
             </div>
             <div class="settingButton">
                 <button class="settingBtn" onclick="saveSettings()">저장</button>
-                <button class="settingBtn" onclick="showScreen('menu')">뒤로가기</button>
+                <button class="menuButton">메뉴로</button>
             </div>
         </div>
 
@@ -433,11 +440,7 @@
             <h2>랭킹</h2>
 
             <div id="rankingList">
-                <p>1. 완두콩 - 100점</p>
-                <p>2. 고구마 - 90점</p>
-                <p>3. 감자 - 80점</p>
-                <p>4. 옥수수 - 70점</p>
-                <p>5. 토마토 - 60점</p>
+                <p></p>
             </div>
 
             <button class="menuButton">메뉴로</button>
@@ -487,6 +490,7 @@
             query,//쿼리 사용
             orderBy,//정렬 사용
             limit,//제한 사용
+            increment//증가 사용
         } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
         import {
@@ -609,6 +613,7 @@
         };
 
         let combo = 0;
+        let maxCombo = 0;
 
         let nickname = "";
 
@@ -625,12 +630,14 @@
                 await loadBestScore();
 
                 document.getElementById("loginScreenButton").innerText = nickname; 
+                document.getElementById("rankingButton").style.display = "block";
             } else {
                 console.log("로그아웃 상태");
 
                 bestScore = 0;
 
                 document.getElementById("loginScreenButton").innerText = "로그인";
+                document.getElementById("rankingButton").style.display = "none";
             }
         })
 
@@ -657,9 +664,22 @@
                 await setDoc(doc(db, "users", userCredential.user.uid), {nickname: nickname, bestScore: 0});//회원가입 시 닉네임과 최고점수 저장
                 console.log("회원가입 성공 : ", userCredential.user.uid);//사용자 구분을 위한 uid 생성
                 document.getElementById("signupMessage").innerText = "회원가입 성공!";
+                
+                document.getElementById("signupNickname").value = "";
+                document.getElementById("signupEmail").value = "";
+                document.getElementById("signupPassword").value = "";
+                showScreen("menu");
             } catch (error) {
-                console.error(error);
-                document.getElementById("signupMessage").innerText = "회원가입 실패!" + error.message;
+                
+                if (error.code === "auth/invalid-email") {
+                    document.getElementById("signupMessage").innerText = "유효하지 않은 이메일입니다.";
+                } else if (error.code === "auth/email-already-in-use"){
+                    document.getElementById("signupMessage").innerText = "이미 사용 중인 이메일입니다.";
+                } else if (error.code === "auth/weak-password") {
+                    document.getElementById("signupMessage").innerText = "비밀번호가 너무 짧습니다. 최소 6자 이상이어야 합니다.";
+                }else{
+                    document.getElementById("signupMessage").innerText = "회원가입 중 오류가 발생했습니다. 다시 시도해 주세요.";
+                }
             }
         });
 
@@ -672,9 +692,18 @@
 
                 console.log("로그인 성공 : ", userCredential.user.uid);
                 document.getElementById("loginMessage").innerText = "로그인 성공!";
+                
+                document.getElementById("loginEmail").value = "";
+                document.getElementById("loginPassword").value = "";
+                showScreen("menu");
             }catch (error) {
-                console.error(error);
-                document.getElementById("loginMessage").innerText = "로그인 실패!" + error.message;
+                if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password" || error.code === "auth/user-not-found") {
+                    document.getElementById("loginMessage").innerText = "이메일 또는 비밀번호가 잘못되었습니다.";
+                    document.getElementById("loginPassword").value = "";
+                }else{
+                    document.getElementById("loginMessage").innerText = "로그인 중 오류가 발생했습니다. 다시 시도해 주세요.";
+                    console.error(error);
+                }
             }
         })
 
@@ -725,6 +754,31 @@
             }
         }
 
+        async function saveGameState(){
+            if (!currentUser) return;
+
+            try{
+                await getDoc(doc(db,"users", currentUser.uid)).then(async (userDoc) => {
+                    const updates = {
+                        playedGames: increment(1),
+                        totalQuestions: increment(totalQuestions),
+                        totalScore: increment(score),
+                        wrongQuestions: increment(wrongQuestions.length)
+                    };
+                    if (maxCombo > (userDoc.exists() ? userDoc.data().maxCombo || 0 : 0)) {
+                        updates.maxCombo = maxCombo;
+                    }
+
+                    await setDoc(doc(db, "users", currentUser.uid), updates, { merge: true });
+                });
+
+
+                console.log("게임 통계 저장 완료");
+            } catch (error) {
+                console.error("게임 통계 저장 실패:", error);
+            }
+        }
+
         async function loadRanking(){
             try {
                 const rankingQuery = query(collection(db, "users"), orderBy("bestScore", "desc"), limit(10));
@@ -762,7 +816,8 @@
                 btn.classList.remove("selectedCategory"); // 모든 버튼에서 선택된 클래스 제거
             });
             button.classList.add("selectedCategory"); // 선택한 버튼에 선택된 클래스 추가
-        }
+
+            }
 
         window.loadSettings = function(){
             document.getElementById("timerCheck").checked = settings.timer;
@@ -996,6 +1051,10 @@
                     clearInterval(timerId);// 타이머 멈춤
                     score++;// 점수 증가
                     combo++;// 콤보 증가
+                    if (combo > maxCombo) {
+                        maxCombo = combo; // 최대 콤보 갱신
+                    }
+
                     start = false;
                     setTimeout(() => {
                         document.getElementById("currentInput").innerText = lastInput
@@ -1043,7 +1102,7 @@
             updateKeyboardUI();
         });
 
-        function checkChoice(correct, button, userAnswer) {
+        window.checkChoice=function(correct, button, userAnswer) {
             if(start === false) return;
             start = false;
 
@@ -1054,6 +1113,10 @@
 
                 score++;
                 combo++;
+                if (combo > maxCombo) {
+                    maxCombo = combo; // 최대 콤보 갱신
+                }
+
             }else{
                 button.classList.add("wrong");
                 document.getElementById("time").style.color = wrongColor;
@@ -1115,7 +1178,6 @@
                 reviewHTML += "</div>";
                 reviewHTML += "<hr>";
                 }
-                
             }
 
             document.getElementById("review").innerHTML = reviewHTML;
@@ -1125,6 +1187,8 @@
                 await saveBestScore();
                 console.log("새로운 최고점수:", bestScore);
             }
+
+            await saveGameState();
         }
 
         window.showScreen = function(screenId) {
@@ -1142,8 +1206,10 @@
             if (screenId === "gameScreen" || screenId === "studyScreen" || screenId === "loginScreen" || screenId === "signupScreen") {
                 document.getElementById("loginScreenButton").style.display = "none";
                 document.getElementById("userMenu").style.display = "none";
+                document.getElementById("rankingButton").style.display = "none";
             } else {
                 document.getElementById("loginScreenButton").style.display = "block";
+                document.getElementById("rankingButton").style.display = "block";
             }
         }
 
@@ -1220,7 +1286,15 @@
             }
         }
 
-        createKeyboard();
+        window.clearLoginSignup = function() {
+            document.getElementById("loginEmail").value = "";
+            document.getElementById("loginPassword").value = "";
+            document.getElementById("signupNickname").value = "";
+            document.getElementById("signupEmail").value = "";
+            document.getElementById("signupPassword").value = "";
+            document.getElementById("loginMessage").innerText = "";
+            document.getElementById("signupMessage").innerText = "";
+        }
 
         document.getElementById("startButton").addEventListener("click", function() {// 시작 버튼 클릭 시
             if(currentCategory === "") {
