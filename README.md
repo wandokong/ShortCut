@@ -61,7 +61,7 @@
 
 ### 랭킹 화면
 
-<img src="./images/lanking.PNG" width="600">
+<img src="./images/ranking.PNG" width="600">
 
 ### 학습 화면
 
