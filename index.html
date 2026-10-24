@@ -1,5 +1,5 @@
 <!DOCTYPE html><!--키보드 누를 때 ' 거랑 \ 이거 안눌림 로그인 기능 추가했다 css랑 hmtl 좀 손봐서 화면좀 만들고 메인화면에 로그아웃 버튼 꺼내고 메인화면에 로그인 화면 버튼 추가해라 비유하면 맛은 냈으니 보기좋게 만들어라-->
-<html><!--  저장 하는거 성공했어 여러가지 해보고 랭크 해봐-->
+<html><!--  저장 하는거 성공했어 여러가지 해보고 랭크 해봐 보니까 저장할때랑 불러올때 이름이 다르고 맞춘개수 총합은 없다-->
 <head>
     <meta charset="UTF-8">
     <title>퀴즈</title>
@@ -396,11 +396,19 @@
         
         <div id ="infoScreen">
             <h2>내 정보</h2>
+
             <p>이메일</p>
             <p id="infoEmail"></p>
-
             <p>최고 점수</p>
             <p id="infoBestScore"></p>
+            <p>플레이 횟수</p>
+            <p id="infoPlayCount"></p>
+            <p>누적 정답 수</p>
+            <p id="infoCorrectCount"></p>
+            <p>누적 오답 수</p>
+            <p id="infoWrongCount"></p>
+            <p>최고 콤보</p>
+            <p id="infoMaxCombo"></p>
 
             <button class="menuButton">메뉴로</button>
         </div>
@@ -627,7 +635,7 @@
                 console.log("이메일 : ", user.email);
                 console.log("uid : ", user.uid);
 
-                await loadBestScore();
+                await loadGameState();
 
                 document.getElementById("loginScreenButton").innerText = nickname; 
                 document.getElementById("rankingButton").style.display = "block";
@@ -719,20 +727,27 @@
         })
         
 
-        async function loadBestScore() {
+        async function loadGameState() {
             if (!currentUser) {
                 bestScore = 0;
+                nickname = "";
                 return;
             }
         
             try {
                 const userDoc = await getDoc(doc(db, "users", currentUser.uid));
          
-                if (userDoc.exists()) {
-                    bestScore = userDoc.data().bestScore || 0;
-                    nickname = userDoc.data().nickname;
+                if (userDoc.exists()){
+                    nickname = userDoc.data().nickname || "";
+                    document.getElementById("infoEmail").innerText = currentUser.email;
+                    document.getElementById("infoBestScore").innerText = bestScore + "점";
+                    document.getElementById("infoPlayCount").innerText = (userDoc.data().playCount || 0) + "회";
+                    document.getElementById("infoCorrectCount").innerText = (userDoc.data().correctCombo || 0) + "개";
+                    document.getElementById("infoWrongCount").innerText = (userDoc.data().wrongCombo || 0) + "개";
+                    document.getElementById("infoMaxCombo").innerText = (userDoc.data().maxCombo || 0) + "콤보";
                 }else {
                     bestScore = 0;
+                    nickname = "";
                 }
                 console.log("최고 점수 불러옴:", bestScore);
                 console.log("닉네임 불러옴:", nickname);
@@ -797,7 +812,7 @@
                 console.error("랭킹 불러오기 실패:", error);
             }
         }
-
+//여기서부터 끝
 
         window.selectCategory = function(category, button) { // 카테고리 선택 함수
             currentCategory = category;// 선택한 카테고리 저장
@@ -1380,9 +1395,8 @@
             startQuestion(); // 문제 시작
         });
 
-        document.getElementById("infoButton").addEventListener("click", function() { // 정보 버튼 클릭 시
-            document.getElementById("infoEmail").textContent = currentUser.email;
-            document.getElementById("infoBestScore").textContent = bestScore + "점";
+        document.getElementById("infoButton").addEventListener("click", async function() { // 정보 버튼 클릭 시
+            await loadGameState();
             showScreen("infoScreen"); // 정보 화면 표시
         });
 
