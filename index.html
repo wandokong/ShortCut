@@ -174,7 +174,6 @@
     }
 
     #keyboard{
-        display:flex;
         flex-direction:column;
         align-items:center;
         gap:6px;
@@ -958,16 +957,17 @@
         }
 
         function checkShortcut(){
+
             for(let question of questions){
                 let inputKeys = [...pressedKeys].sort();
                 let answerKeys = [...question.keys].sort();
 
                 if(JSON.stringify(inputKeys) === JSON.stringify(answerKeys)){
-                    document.getElementById("menuButton").style.display = "none";
+                    for (var button of document.getElementsByClassName("menuButton")){button.style.display = "none";}
                     document.getElementById("learnResult").innerText = "이 단축키는 " + question.q + "입니다."
                     setTimeout(() => {
+                        for (var button of document.getElementsByClassName("menuButton")){button.style.display = "inline-block";}
                         document.getElementById("learnResult").innerText = "";
-                        document.getElementById("menuButton").style.display = "inline-block";
                     }, 800);
 
                     break;
@@ -1332,6 +1332,7 @@
 
             currentMode = "learning";
             showScreen("studyScreen"); // 학습 화면 표시
+            createKeyboard()
             document.getElementById("keyboard").style.display = "flex";
 
             let studyHTML = "";
@@ -1378,7 +1379,7 @@
             }
 
             questions = [...wrongQuestions]; // 틀린 문제만 다시 시작
-            totalQuestions = questions.length; // 총 문제 수 업데이트
+            totalQuestions = questions.length; // 총 문제 수 업데 이트
             score = 0; // 점수 초기화
             combo = 0; // 콤보 초기화
             wrongQuestions = [];
